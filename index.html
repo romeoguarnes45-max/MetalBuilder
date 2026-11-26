@@ -1,0 +1,659 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="theme-color" content="#0f294a" />
+  <link rel="manifest" href="manifest.json" />
+  <title>Metal Builder — Construction & Payroll ERP</title>
+  <link rel="stylesheet" href="css/styles.css" />
+</head>
+<body>
+  <!-- ==================== ADMIN LOGIN SCREEN ==================== -->
+  <div id="login-screen" class="login-screen">
+    <div class="login-card">
+      <div class="brand login-brand">
+        <div class="brand-icon">MB</div>
+        <div>
+          <h1>Metal Builder</h1>
+          <span>Admin &amp; Staff Portal Login</span>
+        </div>
+      </div>
+
+      <form id="form-login" class="stack-form">
+        <div class="form-group">
+          <label for="login-email">Account Email / Username *</label>
+          <input type="text" id="login-email" placeholder="Romeo D Guarnes" required />
+        </div>
+        <div class="form-group">
+          <label for="login-password">Password *</label>
+          <input type="password" id="login-password" placeholder="Enter password" required />
+        </div>
+        <div id="login-error" class="login-error" style="display:none;"></div>
+        <button type="submit" class="btn btn-primary full-width">Sign In to System</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- ==================== MAIN ERP SHELL ==================== -->
+  <div class="app-shell" id="app-shell" style="display:none;">
+    <!-- Sidebar Navigation -->
+    <aside class="sidebar" id="sidebar">
+      <div class="brand">
+        <div class="brand-icon">MB</div>
+        <div>
+          <h1>Metal Builder</h1>
+          <span>Construction ERP</span>
+        </div>
+      </div>
+
+      <div class="session-box" id="sidebar-user-box"></div>
+
+      <nav class="nav-menu" id="nav-menu">
+        <button class="nav-item active" data-view="dashboard">
+          <span class="nav-icon">📊</span>
+          <span>Dashboard</span>
+        </button>
+        <button class="nav-item" data-view="projects">
+          <span class="nav-icon">🏗️</span>
+          <span>Projects</span>
+        </button>
+        <button class="nav-item" data-view="employees">
+          <span class="nav-icon">👷</span>
+          <span>Employees</span>
+        </button>
+        <button class="nav-item" data-view="timelogs">
+          <span class="nav-icon">⏱️</span>
+          <span>Time In / Time Out</span>
+        </button>
+        <button class="nav-item" data-view="salary">
+          <span class="nav-icon">💵</span>
+          <span>Salary &amp; Bale</span>
+          <span class="nav-badge" id="nav-bale-badge" style="display:none;">0</span>
+        </button>
+        <button class="nav-item" data-view="expenses">
+          <span class="nav-icon">⛽</span>
+          <span>Other Expenses</span>
+        </button>
+        <button class="nav-item" data-view="settings">
+          <span class="nav-icon">⚙️</span>
+          <span>Settings</span>
+        </button>
+      </nav>
+
+      <div class="sidebar-footer">
+        <button class="btn btn-outline btn-sm full-width" id="btn-logout">
+          🚪 Log Out
+        </button>
+        <button class="btn btn-outline btn-sm full-width" id="btn-export-backup">
+          ⬇️ Export Backup (JSON)
+        </button>
+        <button class="btn btn-ghost btn-sm full-width" id="btn-clear-data">
+          🗑️ Clear All Data
+        </button>
+      </div>
+    </aside>
+
+    <!-- Main Content Area -->
+    <div class="main-wrapper">
+      <header class="topbar">
+        <div class="topbar-left">
+          <button class="menu-toggle" id="menu-toggle" aria-label="Toggle Menu">☰</button>
+          <div>
+            <h2 id="page-title">Dashboard</h2>
+            <p id="page-subtitle" class="subtitle">Real-time overview of ongoing projects, expenses, and net profit</p>
+          </div>
+        </div>
+        <div class="topbar-right">
+          <span class="user-pill" id="topbar-user-pill"></span>
+          <div class="currency-pill">Currency: PHP (₱)</div>
+        </div>
+      </header>
+
+      <!-- Global Bale Alert Banner -->
+      <div id="global-bale-banner" class="alert-banner warning" style="display:none;"></div>
+
+      <main class="content-area">
+        <!-- ==================== 1. DASHBOARD VIEW ==================== -->
+        <section id="view-dashboard" class="view-section active">
+          <div class="kpi-grid">
+            <div class="kpi-card">
+              <span class="kpi-label">Ongoing Projects</span>
+              <strong class="kpi-value text-blue" id="kpi-ongoing-count">0</strong>
+              <span class="kpi-sub" id="kpi-done-count-sub">0 Completed</span>
+            </div>
+            <div class="kpi-card">
+              <span class="kpi-label">Total Contract Price</span>
+              <strong class="kpi-value" id="kpi-total-price">₱0.00</strong>
+              <span class="kpi-sub">All active &amp; completed projects</span>
+            </div>
+            <div class="kpi-card">
+              <span class="kpi-label">Total Project Expenses</span>
+              <strong class="kpi-value text-amber" id="kpi-total-expenses">₱0.00</strong>
+              <span class="kpi-sub" id="kpi-expense-split">Labor + Materials &amp; Site</span>
+            </div>
+            <div class="kpi-card">
+              <span class="kpi-label">Total Net Profit</span>
+              <strong class="kpi-value text-green" id="kpi-net-profit">₱0.00</strong>
+              <span class="kpi-sub" id="kpi-profit-margin">0% Margin</span>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-header">
+              <div>
+                <h3>Ongoing Projects Financial Health</h3>
+                <p class="card-desc">Live computation of Project Final Price minus Labor &amp; Site Expenses</p>
+              </div>
+              <button class="btn btn-primary btn-sm" data-goto="projects">+ Manage Projects</button>
+            </div>
+            <div class="table-responsive">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th>Project Name</th>
+                    <th>Client</th>
+                    <th>Assigned Crew</th>
+                    <th class="num">Final Price</th>
+                    <th class="num">Labor Cost</th>
+                    <th class="num">Other Expenses</th>
+                    <th class="num">Net Profit</th>
+                    <th>Status</th>
+                  </tr>
+                </thead>
+                <tbody id="dashboard-ongoing-tbody"></tbody>
+              </table>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-header">
+              <div>
+                <h3>All Projects Done (Completed History)</h3>
+                <p class="card-desc">Finished metal house &amp; construction projects with final profit summary</p>
+              </div>
+            </div>
+            <div class="table-responsive">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th>Project Name</th>
+                    <th>Client</th>
+                    <th>Completed Date</th>
+                    <th class="num">Final Price</th>
+                    <th class="num">Total Expenses</th>
+                    <th class="num">Final Net Profit</th>
+                    <th>Action</th>
+                  </tr>
+                </thead>
+                <tbody id="dashboard-done-tbody"></tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+        <!-- ==================== 2. PROJECTS VIEW ==================== -->
+        <section id="view-projects" class="view-section">
+          <div class="two-col-layout">
+            <div class="card">
+              <div class="card-header">
+                <h3>Add New Construction Project</h3>
+              </div>
+              <form id="form-add-project" class="stack-form">
+                <div class="form-group">
+                  <label for="proj-name">Project Name *</label>
+                  <input type="text" id="proj-name" placeholder="e.g., 2-Storey Steel Frame House" required />
+                </div>
+                <div class="form-group">
+                  <label for="proj-client">Client Name *</label>
+                  <input type="text" id="proj-client" placeholder="e.g., Engr. Mateo Cruz" required />
+                </div>
+                <div class="form-group">
+                  <label for="proj-price">Project Final Price (₱) *</label>
+                  <input type="number" id="proj-price" min="0" step="0.01" placeholder="e.g., 850000" required />
+                </div>
+                <div class="form-group">
+                  <label>Assign Employees (Skilled / Not Skilled)</label>
+                  <div id="proj-employee-checklist" class="checkbox-list"></div>
+                </div>
+                <button type="submit" class="btn btn-primary full-width">Save Project</button>
+              </form>
+            </div>
+
+            <div class="card">
+              <div class="card-header">
+                <h3>All Projects &amp; Assigned Crew</h3>
+              </div>
+              <div class="table-responsive">
+                <table class="data-table">
+                  <thead>
+                    <tr>
+                      <th>Project &amp; Client</th>
+                      <th>Assigned Crew</th>
+                      <th class="num">Final Price</th>
+                      <th class="num">Total Expense</th>
+                      <th class="num">Net Profit</th>
+                      <th>Status</th>
+                      <th>Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody id="projects-list-tbody"></tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- ==================== 3. EMPLOYEES VIEW ==================== -->
+        <section id="view-employees" class="view-section">
+          <div class="two-col-layout">
+            <div class="card">
+              <div class="card-header">
+                <h3>Add New Employee</h3>
+              </div>
+              <form id="form-add-employee" class="stack-form">
+                <div class="form-group">
+                  <label for="emp-name">Employee Full Name *</label>
+                  <input type="text" id="emp-name" placeholder="e.g., Robert Santos" required />
+                </div>
+                <div class="form-group">
+                  <label for="emp-skill">Skill Classification *</label>
+                  <select id="emp-skill" required>
+                    <option value="Skilled">Skilled (Welder / Fabricator / Foreman)</option>
+                    <option value="Not Skilled">Not Skilled (Helper / Labor)</option>
+                  </select>
+                </div>
+                <div class="form-row">
+                  <div class="form-group">
+                    <label for="emp-rate-type">Salary Basis *</label>
+                    <select id="emp-rate-type" required>
+                      <option value="day">Per Day (8 hrs/day)</option>
+                      <option value="hour">Per Hour</option>
+                      <option value="month">Per Month (26 days/mo)</option>
+                    </select>
+                  </div>
+                  <div class="form-group">
+                    <label for="emp-rate-amount">Salary Rate (₱) *</label>
+                    <input type="number" id="emp-rate-amount" min="1" step="0.01" placeholder="e.g., 850" required />
+                  </div>
+                </div>
+                <div class="rate-preview-box" id="add-emp-rate-preview">
+                  Daily: ₱0.00 | Hourly: ₱0.00 | Weekly (6d): ₱0.00 | Monthly (26d): ₱0.00
+                </div>
+                <button type="submit" class="btn btn-primary full-width">Add Employee</button>
+              </form>
+            </div>
+
+            <div class="card">
+              <div class="card-header">
+                <h3>Employee Roster &amp; Salary Rates</h3>
+                <p class="card-desc">Edit rates anytime or remove inactive workers</p>
+              </div>
+              <div class="table-responsive">
+                <table class="data-table">
+                  <thead>
+                    <tr>
+                      <th>Name</th>
+                      <th>Classification</th>
+                      <th>Base Rate</th>
+                      <th class="num">Day (8h)</th>
+                      <th class="num">Week (6d)</th>
+                      <th class="num">Month (26d)</th>
+                      <th>Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody id="employees-tbody"></tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- ==================== 4. TIME IN / TIME OUT VIEW ==================== -->
+        <section id="view-timelogs" class="view-section">
+          <div class="two-col-layout">
+            <div class="card">
+              <div class="card-header">
+                <h3>Log Daily Time In / Time Out</h3>
+              </div>
+              <form id="form-add-timelog" class="stack-form">
+                <div class="form-group">
+                  <label for="log-employee">Select Employee *</label>
+                  <select id="log-employee" required></select>
+                </div>
+                <div class="form-group">
+                  <label for="log-project">Project Site *</label>
+                  <select id="log-project" required></select>
+                </div>
+                <div class="form-group">
+                  <label for="log-date">Work Date *</label>
+                  <input type="date" id="log-date" required />
+                </div>
+                <div class="form-row">
+                  <div class="form-group">
+                    <label for="log-time-in">Time In *</label>
+                    <input type="time" id="log-time-in" value="08:00" required />
+                  </div>
+                  <div class="form-group">
+                    <label for="log-time-out">Time Out *</label>
+                    <input type="time" id="log-time-out" value="17:00" required />
+                  </div>
+                </div>
+                <p class="helper-text">* Standard shift 08:00–17:00 counts as 8 regular hours (1 hr lunch break deducted automatically if shift &gt; 5 hrs).</p>
+                <button type="submit" class="btn btn-primary full-width">Record Time Log</button>
+              </form>
+            </div>
+
+            <div class="card">
+              <div class="card-header">
+                <h3>Daily Attendance Logs</h3>
+                <select id="filter-timelog-emp" class="inline-select">
+                  <option value="all">All Employees</option>
+                </select>
+              </div>
+              <div class="table-responsive">
+                <table class="data-table">
+                  <thead>
+                    <tr>
+                      <th>Date</th>
+                      <th>Employee</th>
+                      <th>Project</th>
+                      <th>Time In / Out</th>
+                      <th class="num">Hours</th>
+                      <th class="num">Computed Pay</th>
+                      <th>Payroll Status</th>
+                    </tr>
+                  </thead>
+                  <tbody id="timelogs-tbody"></tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- ==================== 5. SALARY & BALE VIEW ==================== -->
+        <section id="view-salary" class="view-section">
+          <div class="two-col-layout">
+            <div class="card">
+              <div class="card-header">
+                <h3>Record Down Salary (Bale)</h3>
+                <p class="card-desc">System notifies you when an employee has an unpaid Bale balance</p>
+              </div>
+              <form id="form-add-bale" class="stack-form">
+                <div class="form-group">
+                  <label for="bale-employee">Employee *</label>
+                  <select id="bale-employee" required></select>
+                </div>
+                <div class="form-group">
+                  <label for="bale-amount">Bale Amount (₱) *</label>
+                  <input type="number" id="bale-amount" min="1" step="0.01" placeholder="e.g., 1000" required />
+                </div>
+                <div class="form-group">
+                  <label for="bale-date">Date Given *</label>
+                  <input type="date" id="bale-date" required />
+                </div>
+                <div class="form-group">
+                  <label for="bale-note">Note / Reason</label>
+                  <input type="text" id="bale-note" placeholder="e.g., Mid-week cash advance" />
+                </div>
+                <button type="submit" class="btn btn-amber full-width">Record Bale (Cash Advance)</button>
+              </form>
+            </div>
+
+            <div class="card">
+              <div class="card-header">
+                <div>
+                  <h3>Weekly Salary Computation &amp; Approval</h3>
+                  <p class="card-desc">Select an employee to inspect worked days, deduct Bale, and release salary</p>
+                </div>
+                <select id="salary-select-emp" class="inline-select"></select>
+              </div>
+
+              <div id="salary-inspector-panel"></div>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-header">
+              <div>
+                <h3>All Salary &amp; Bale Transaction History</h3>
+                <p class="card-desc">Complete audit trail of released salaries ("Nag sahod na") and Bale cash advances</p>
+              </div>
+            </div>
+            <div class="table-responsive">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th>Date</th>
+                    <th>Employee</th>
+                    <th>Transaction Type</th>
+                    <th class="num">Gross / Bale Amount</th>
+                    <th class="num">Bale Deducted</th>
+                    <th class="num">Net Cash Given</th>
+                    <th>Details &amp; Status</th>
+                  </tr>
+                </thead>
+                <tbody id="salary-history-tbody"></tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+        <!-- ==================== 6. OTHER EXPENSES VIEW ==================== -->
+        <section id="view-expenses" class="view-section">
+          <div class="two-col-layout">
+            <div class="card">
+              <div class="card-header">
+                <h3>Log Project Site / Material Expense</h3>
+              </div>
+              <form id="form-add-expense" class="stack-form">
+                <div class="form-group">
+                  <label for="exp-project">Project *</label>
+                  <select id="exp-project" required></select>
+                </div>
+                <div class="form-group">
+                  <label for="exp-category">Expense Category *</label>
+                  <select id="exp-category" required>
+                    <option value="Gasoline / Fuel">Gasoline / Fuel</option>
+                    <option value="Employee Food / Meals">Employee Food / Meals</option>
+                    <option value="Steel & Construction Materials">Steel &amp; Construction Materials</option>
+                    <option value="Equipment / Welding Consumables">Equipment / Welding Consumables</option>
+                    <option value="Other Site Expense">Other Site Expense</option>
+                  </select>
+                </div>
+                <div class="form-group">
+                  <label for="exp-desc">Description *</label>
+                  <input type="text" id="exp-desc" placeholder="e.g., 20L Diesel for generator & truck" required />
+                </div>
+                <div class="form-row">
+                  <div class="form-group">
+                    <label for="exp-amount">Amount (₱) *</label>
+                    <input type="number" id="exp-amount" min="1" step="0.01" placeholder="e.g., 1450" required />
+                  </div>
+                  <div class="form-group">
+                    <label for="exp-date">Date *</label>
+                    <input type="date" id="exp-date" required />
+                  </div>
+                </div>
+                <button type="submit" class="btn btn-primary full-width">Add Project Expense</button>
+              </form>
+            </div>
+
+            <div class="card">
+              <div class="card-header">
+                <h3>Project Expenses Ledger</h3>
+                <select id="filter-expense-project" class="inline-select">
+                  <option value="all">All Projects</option>
+                </select>
+              </div>
+              <div class="table-responsive">
+                <table class="data-table">
+                  <thead>
+                    <tr>
+                      <th>Date</th>
+                      <th>Project</th>
+                      <th>Category</th>
+                      <th>Description</th>
+                      <th class="num">Amount</th>
+                      <th>Action</th>
+                    </tr>
+                  </thead>
+                  <tbody id="expenses-tbody"></tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- ==================== 7. SETTINGS & ACCOUNTS VIEW ==================== -->
+        <section id="view-settings" class="view-section">
+          <div class="two-col-layout">
+            <div class="card">
+              <div class="card-header">
+                <h3>Add System Account</h3>
+                <p class="card-desc">Create additional Admin or Staff login accounts</p>
+              </div>
+              <form id="form-add-account" class="stack-form">
+                <div class="form-group">
+                  <label for="acc-name">Display Name *</label>
+                  <input type="text" id="acc-name" placeholder="e.g., Site Supervisor" required />
+                </div>
+                <div class="form-group">
+                  <label for="acc-email">Email / Login ID *</label>
+                  <input type="text" id="acc-email" placeholder="e.g., supervisor@metalbuilder.local" required />
+                </div>
+                <div class="form-group">
+                  <label for="acc-role">Role *</label>
+                  <select id="acc-role" required>
+                    <option value="Admin">Admin</option>
+                    <option value="Staff">Staff</option>
+                  </select>
+                </div>
+                <div class="form-group">
+                  <label for="acc-password">Password *</label>
+                  <input type="password" id="acc-password" placeholder="Set account password" required />
+                </div>
+                <button type="submit" class="btn btn-primary full-width">Add Account</button>
+              </form>
+            </div>
+
+            <div class="card">
+              <div class="card-header">
+                <div>
+                  <h3>System Login Accounts</h3>
+                  <p class="card-desc">Add, edit credentials/roles, or delete accounts</p>
+                </div>
+              </div>
+              <div class="table-responsive">
+                <table class="data-table">
+                  <thead>
+                    <tr>
+                      <th>Name</th>
+                      <th>Email / Login ID</th>
+                      <th>Role</th>
+                      <th>Password</th>
+                      <th>Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody id="accounts-tbody"></tbody>
+                </table>
+              </div>
+            </div>
+          </div>
+        </section>
+      </main>
+    </div>
+  </div>
+
+  <!-- ==================== MODAL: EDIT EMPLOYEE ==================== -->
+  <div class="modal-backdrop" id="modal-edit-employee" style="display:none;">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3>Edit Employee &amp; Salary</h3>
+        <button class="modal-close" data-close-modal="modal-edit-employee">&times;</button>
+      </div>
+      <form id="form-edit-employee" class="stack-form">
+        <input type="hidden" id="edit-emp-id" />
+        <div class="form-group">
+          <label for="edit-emp-name">Employee Name *</label>
+          <input type="text" id="edit-emp-name" required />
+        </div>
+        <div class="form-group">
+          <label for="edit-emp-skill">Skill Classification *</label>
+          <select id="edit-emp-skill" required>
+            <option value="Skilled">Skilled</option>
+            <option value="Not Skilled">Not Skilled</option>
+          </select>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label for="edit-emp-rate-type">Salary Basis *</label>
+            <select id="edit-emp-rate-type" required>
+              <option value="day">Per Day (8 hrs)</option>
+              <option value="hour">Per Hour</option>
+              <option value="month">Per Month (26 days)</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="edit-emp-rate-amount">New Salary Rate (₱) *</label>
+            <input type="number" id="edit-emp-rate-amount" min="1" step="0.01" required />
+          </div>
+        </div>
+        <div class="rate-preview-box" id="edit-emp-rate-preview"></div>
+        <div class="modal-actions">
+          <button type="button" class="btn btn-outline" data-close-modal="modal-edit-employee">Cancel</button>
+          <button type="submit" class="btn btn-primary">Save Changes</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ==================== MODAL: EDIT ACCOUNT ==================== -->
+  <div class="modal-backdrop" id="modal-edit-account" style="display:none;">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3>Edit System Account</h3>
+        <button class="modal-close" data-close-modal="modal-edit-account">&times;</button>
+      </div>
+      <form id="form-edit-account" class="stack-form">
+        <input type="hidden" id="edit-acc-id" />
+        <div class="form-group">
+          <label for="edit-acc-name">Display Name *</label>
+          <input type="text" id="edit-acc-name" required />
+        </div>
+        <div class="form-group">
+          <label for="edit-acc-email">Email / Login ID *</label>
+          <input type="text" id="edit-acc-email" required />
+        </div>
+        <div class="form-group">
+          <label for="edit-acc-role">Role *</label>
+          <select id="edit-acc-role" required>
+            <option value="Admin">Admin</option>
+            <option value="Staff">Staff</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="edit-acc-password">Password *</label>
+          <input type="text" id="edit-acc-password" required />
+        </div>
+        <div class="modal-actions">
+          <button type="button" class="btn btn-outline" data-close-modal="modal-edit-account">Cancel</button>
+          <button type="submit" class="btn btn-primary">Save Account</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Toast Notification -->
+  <div id="toast" class="toast"></div>
+
+  <script src="js/app.js"></script>
+  <script>
+    if ("serviceWorker" in navigator) {
+      window.addEventListener("load", () => {
+        navigator.serviceWorker.register("sw.js").catch(() => {});
+      });
+    }
+  </script>
+</body>
+</html>
